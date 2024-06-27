@@ -1,0 +1,138 @@
+services:
+  influxdb:
+    image: influxdb:latest
+    pull_policy: missing
+    container_name: influxdb
+    hostname: influxdb
+    networks:
+      - xronos-dashboard
+    ports:
+      - "8086:8086/tcp"
+    env_file:
+      - influxdb/influx.env
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - ./influxdb/config:/etc/influxdb2
+    deploy:
+      restart_policy:
+        condition: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  grafana:
+    image: grafana/grafana:latest
+    pull_policy: missing
+    container_name: grafana
+    hostname: grafana
+    networks:
+      - xronos-dashboard
+    ports:
+      - "3000:3000"
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    links:
+      - influxdb
+    env_file:
+      - grafana/grafana.env
+    environment:
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/tracing.json
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/extended:/dashboards
+    deploy:
+      restart_policy:
+        condition: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  telegraf:
+    image: telegraf:latest
+    pull_policy: missing
+    container_name: telegraf
+    hostname: telegraf
+    networks:
+      - xronos-dashboard
+    ports:
+      - "8186:8186"     # TCP over http
+      - "8094:8094/udp" # UDP socket
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    links:
+      - influxdb
+    env_file:
+      - ./influxdb/influx.env
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    deploy:
+      restart_policy:
+        condition: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -i -XPOST http://0.0.0.0:8186/telegraf --data-binary \"telegraf,heartbeat=healthcheck ping=true $(date +%s%N)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  test-publisher-py-base:
+    image: test-publisher-py-base
+    pull_policy: missing
+    build:
+      context: ./InfluxPublisher/py/src/
+      dockerfile: baseimage.Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 0
+
+  test-publisher-py:
+    pull_policy: missing
+    build:
+      context: ./InfluxPublisher/py/src-gen/InfluxPublisher/
+    container_name: test-publisher-py
+    hostname: test-publisher-py
+    networks:
+      - xronos-dashboard
+    links:
+      - telegraf
+    environment:
+      LF_TELEGRAF_HOST_NAME: telegraf
+    stop_signal: SIGINT
+    depends_on:
+      telegraf:
+        condition: service_healthy
+
+  test-publisher-c:
+    pull_policy: missing
+    build:
+      context: ./InfluxPublisher/c/src-gen/InfluxPublisher/
+    container_name: test-publisher-c
+    hostname: test-publisher-c
+    networks:
+      - xronos-dashboard
+    links:
+      - telegraf
+    environment:
+      LF_TELEGRAF_HOST_NAME: telegraf
+    stop_signal: SIGINT
+    depends_on:
+      telegraf:
+        condition: service_healthy
+    tty: true
+
+networks:
+  xronos-dashboard:
+    driver: bridge
+
+volumes:
+  influxdb-data:
+  grafana-data:

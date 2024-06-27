@@ -1,0 +1,96 @@
+# SPDX-FileCopyrightText: © 2024 Xronos Inc.
+# SPDX-License-Identifier: BSD-3-Clause
+
+target Python {
+    files: [
+        "influx_line.py"
+    ],
+    docker: {
+        FROM: "test-publisher-py-base"
+    }
+}
+
+preamble {=
+    # pylint: disable=reimported,wrong-import-position,wrong-import-order,ungrouped-imports,import-outside-toplevel
+=}
+
+# Publishes a datapoint in InfluxDB line format via Telegraf socket
+reactor InfluxLinePublisher {
+    preamble {=
+        import requests
+    =}
+    input line
+
+    state telegraf_session
+    state telegraf_session_active
+    state telegraf_session_initialized
+    state telegraf_url
+
+    reaction(startup) {=
+        self.telegraf_session = self.requests.Session()
+        self.telegraf_session_initialized = False
+        self.telegraf_session_active = False
+        self.telegraf_url = "http://" + os.getenv("LF_TELEGRAF_HOST_NAME", "0.0.0.0") + ":8186/telegraf"
+    =}
+
+    reaction(shutdown) {=
+        if self.telegraf_session_active:
+            self.telegraf_session.close()
+            self.telegraf_session_active = False
+        self.telegraf_session_initialized = False
+    =}
+
+    reaction(line) {=
+        if not self.telegraf_session_initialized or self.telegraf_session_active:
+            try:
+                if not self.telegraf_session_initialized:
+                    print("Publishing to telegraf at " + self.telegraf_url)
+                
+                response = self.telegraf_session.post(
+                    self.telegraf_url,
+                    data = line.value,
+                    headers = {"Content-Type": "application/x-www-form-urlencoded"})
+                
+                if response.ok:
+                    if not self.telegraf_session_initialized:
+                        print("Successfully published to telegraf.")
+                    self.telegraf_session_active = True
+                else:
+                    print("Failed to publish to telegraf. Disabling publishing. Request returned: " + str(response.status_code))
+                    self.telegraf_session_active = False
+                    self.telegraf_session.close()
+
+            except self.requests.RequestException as e:
+                print("Failed to publish to telegraf. Disabling publishing. Exception caught: ", e)
+                self.telegraf_session_active = False
+                self.telegraf_session.close()
+            
+            finally:
+                self.telegraf_session_initialized = True
+    =}
+}
+
+# Sine wave generator for testing
+reactor SineWave(sample_rate_ms = 20 ms) {
+    preamble {=
+        import math
+        from influx_line import InfluxLine
+    =}
+
+    output measurement
+
+    timer t(0, sample_rate_ms)
+    reaction(t) -> measurement {=
+        influx_line = self.InfluxLine(measurement = "xronos-dashboard-test")
+        influx_line.timestamp_ns = lf.time.physical()
+        influx_line.tags["language"] = "py"
+        influx_line.fields["data"] = self.math.sin( lf.time.physical() / 1.0e9 * self.math.pi )
+        measurement.set( influx_line.to_influxdb_line() )
+    =}
+}
+
+main reactor {
+    publisher = new InfluxLinePublisher()
+    producer = new SineWave()
+    producer.measurement -> publisher.line
+}
