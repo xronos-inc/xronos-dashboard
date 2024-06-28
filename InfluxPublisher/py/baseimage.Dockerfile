@@ -1,16 +1,5 @@
-ARG BASEIMAGE=python:3.10-slim
+ARG BASEIMAGE=xronosinc/lf-trace-plugin-api:py
 FROM ${BASEIMAGE}
-
-# install gcc and make
-RUN apt update  \
-    && apt install --no-install-recommends -y -q \
-        build-essential \
-    && apt autoremove -y -q \
-    && apt clean -y -q
-
-# pip install cmake
-ENV PYTHONDONTWRITEBYTECODE=1
-RUN pip install cmake
 
 WORKDIR /lingua-franca
 

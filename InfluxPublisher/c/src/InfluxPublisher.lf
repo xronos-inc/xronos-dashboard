@@ -10,10 +10,10 @@ target C {
         "CMakeListsExtension.cmake"
     ],
     docker: {
-        FROM: "test-publisher-c-base"
+        FROM: "xronosinc/lf-trace-plugin-api:c"
     },
-    // tracing: true,
-    // trace-plugin: "telegraf_lf_trace_plugin"
+    tracing: true,
+    trace-plugin: "telegraf_lf_trace_plugin"
 }
 
 preamble {=
