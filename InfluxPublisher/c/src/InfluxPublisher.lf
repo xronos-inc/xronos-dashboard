@@ -9,7 +9,11 @@ target C {
     cmake-include: [
         "CMakeListsExtension.cmake"
     ],
-    docker: true
+    docker: {
+        FROM: "test-publisher-c-base"
+    },
+    // tracing: true,
+    // trace-plugin: "telegraf_lf_trace_plugin"
 }
 
 preamble {=

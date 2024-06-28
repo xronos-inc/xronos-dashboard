@@ -88,7 +88,7 @@ services:
     image: test-publisher-py-base
     pull_policy: missing
     build:
-      context: ./InfluxPublisher/py/src/
+      context: ./InfluxPublisher/py/
       dockerfile: baseimage.Dockerfile
     deploy:
       mode: replicated
@@ -110,6 +110,16 @@ services:
     depends_on:
       telegraf:
         condition: service_healthy
+
+  test-publisher-c-base:
+    image: test-publisher-c-base
+    pull_policy: missing
+    build:
+      context: ./InfluxPublisher/c/
+      dockerfile: baseimage.Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 0
 
   test-publisher-c:
     pull_policy: missing
