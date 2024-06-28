@@ -1,718 +1,1052 @@
 {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": {
-            "type": "grafana",
-            "uid": "-- Grafana --"
-          },
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "type": "dashboard"
-        }
-      ]
-    },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": 5,
-    "links": [],
-    "liveNow": true,
-    "panels": [
+  "annotations": {
+    "list": [
       {
+        "builtIn": 1,
         "datasource": {
-          "type": "datasource",
-          "uid": "-- Dashboard --"
+          "type": "grafana",
+          "uid": "-- Grafana --"
         },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": []
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 5,
-          "x": 0,
-          "y": 0
-        },
-        "id": 6,
-        "options": {
-          "colorMode": "none",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "pluginVersion": "10.4.1",
-        "targets": [
-          {
-            "datasource": {
-              "type": "datasource",
-              "uid": "-- Dashboard --"
-            },
-            "panelId": 8,
-            "refId": "A"
-          }
-        ],
-        "title": "Processes online",
-        "transformations": [
-          {
-            "id": "filterFieldsByName",
-            "options": {
-              "include": {
-                "names": [
-                  "status"
-                ]
-              }
-            }
-          },
-          {
-            "id": "filterByValue",
-            "options": {
-              "filters": [
-                {
-                  "config": {
-                    "id": "notEqual",
-                    "options": {
-                      "value": "DISCONNECTED"
-                    }
-                  },
-                  "fieldName": "status"
-                }
-              ],
-              "match": "any",
-              "type": "include"
-            }
-          },
-          {
-            "id": "reduce",
-            "options": {
-              "reducers": [
-                "count"
-              ]
-            }
-          }
-        ],
-        "type": "stat"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "custom": {
-              "align": "auto",
-              "cellOptions": {
-                "type": "auto"
-              },
-              "inspect": false
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": []
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 12,
-          "w": 11,
-          "x": 5,
-          "y": 0
-        },
-        "hideTimeOverride": true,
-        "id": 8,
-        "options": {
-          "cellHeight": "sm",
-          "footer": {
-            "countRows": false,
-            "fields": "",
-            "reducer": [
-              "sum"
-            ],
-            "show": false
-          },
-          "frameIndex": 0,
-          "showHeader": true,
-          "sortBy": [
-            {
-              "desc": false,
-              "displayName": "process_name"
-            }
-          ]
-        },
-        "pluginVersion": "10.4.1",
-        "targets": [
-          {
-            "query": "import \"join\"\nimport \"system\"\nimport \"array\"\nimport \"internal/debug\"\n\nheartbeats = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => (r[\"_measurement\"] == \"FederateNames\" and r[\"_field\"] == \"other_process_name\"))\n  |> rename(columns: {\"_value\": \"other_process_name\"})\n  |> group()\n  |> keep(columns: [\"other_process_name\", \"_time\", \"process_name\"])\n\nlatest_tracepoints = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => (r[\"_measurement\"] == \"TraceRecord\" and r[\"_field\"] == \"process_id\"))\n  |> rename(columns: {\"_value\": \"process_id\"})\n  |> keep(columns: [\"process_id\", \"_time\", \"process_name\"])\n  |> group(columns: [\"process_id\"]) |> max(column: \"_time\") |> group()\n\nisEmpty = (tables) => {\n\tcolumnsArray = tables\n\t\t|> columns()\n\t\t|> findColumn(fn: (key) => true, column: \"_value\")\n\treturn length(arr: columnsArray) == 0\n}\n\nd = join.left(\n  left: heartbeats |> keep(columns: [\"other_process_name\"]) |> unique(column: \"other_process_name\"),\n  right: if isEmpty(tables: latest_tracepoints)\n    then array.from(rows: [{\n      process_id: debug.null(type: \"int\"),\n      _time: time(v: 0),\n      process_name: debug.null(type: \"string\")}])\n    else latest_tracepoints,\n  on: (l, r) => l.other_process_name == r.process_name,\n  as: (l, r) => ({l with\n    other_time: r._time\n  }))\n  |> group(columns: [\"other_process_name\"])\n  |> map(fn: (r) => ({r with other_time: if exists r.other_time then r.other_time else time(v: 0)}))\n  |> max(column: \"other_time\")\n  |> group()\ne = join.left(\n  left: d, right: heartbeats,\n  on: (l, r) => l.other_process_name == r.process_name,\n  as: (l, r) => (if not exists l.other_time or r._time > l.other_time\n    then (if not exists r._time then {l with greater_time: time(v: 0), last_message: \"NONE\"} else {l with greater_time: r._time, last_message: \"HEARTBEAT\"})\n    else {l with greater_time: l.other_time, last_message: \"TRACEPOINT\"})\n  )\n  |> keep(columns: [\"greater_time\", \"other_process_name\", \"last_message\"])\n  |> group(columns: [\"other_process_name\"])\n  |> max(column: \"greater_time\")\n  |> group()\n  |> map(fn: (r) => ({r with time_since_last_activity:\n    if r.greater_time == time(v: 0)\n     then debug.null(type: \"time\")\n     else (int(v: system.time()) - int(v: r.greater_time)) / 1000000}))\n\nret = e\n  |> drop(columns: [\"greater_time\"])\n  |> map(fn: (r) => ({r with status: if not exists r.time_since_last_activity\n    then \"DISCONNECTED\"\n    else (if r.last_message == \"TRACEPOINT\" then \"OK\" else \"QUIET\")}))\n  |> drop(columns: [\"last_message\"])\n  |> rename(columns: {\n    \"other_process_name\": \"Process\",\n    \"time_since_last_activity\": \"Age of latest data (ms)\"\n    })\nret",
-            "refId": "A"
-          }
-        ],
-        "timeFrom": "now-30s",
-        "title": "Time since last activity",
-        "type": "table"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "custom": {
-              "align": "auto",
-              "cellOptions": {
-                "type": "auto"
-              },
-              "inspect": false
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": []
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 12,
-          "w": 8,
-          "x": 16,
-          "y": 0
-        },
-        "id": 7,
-        "options": {
-          "cellHeight": "sm",
-          "footer": {
-            "countRows": false,
-            "fields": "",
-            "reducer": [
-              "sum"
-            ],
-            "show": false
-          },
-          "frameIndex": 1,
-          "showHeader": true
-        },
-        "pluginVersion": "10.4.1",
-        "targets": [
-          {
-            "query": "import \"strings\"\n\nfrom(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r[\"_field\"] == \"process_id\")\n  |> filter(fn: (r) => exists r.id_description and not strings.hasPrefix(prefix: \"nr_\", v: r.id_description) and not strings.hasPrefix(prefix: \"ns_\", v: r.id_description))\n  |> filter(fn: (r) => r[\"event_kind_description\"] == \"Reaction starts\")\n  |> group()\n  |> drop(columns: [\"host\", \"worker\", \"dst_id\", \"src_id\", \"_field\", \"_time\", \"process_name\", \"_measurement\"])\n  |> group(columns: [\"id_description\"])\n  |> count()\n  |> group()\n  |> sort(desc: true)\n  |> rename(columns: {id_description: \"Reactor\", _value: \"Number of reaction executions\"})",
-            "refId": "A"
-          }
-        ],
-        "title": "Invocations by reactor",
-        "type": "table"
-      },
-      {
-        "datasource": {
-          "type": "datasource",
-          "uid": "-- Dashboard --"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 5,
-          "x": 0,
-          "y": 6
-        },
-        "id": 9,
-        "options": {
-          "colorMode": "none",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "pluginVersion": "10.4.1",
-        "targets": [
-          {
-            "datasource": {
-              "type": "datasource",
-              "uid": "-- Dashboard --"
-            },
-            "panelId": 8,
-            "refId": "A"
-          }
-        ],
-        "title": "Processes disconnected",
-        "transformations": [
-          {
-            "id": "filterFieldsByName",
-            "options": {
-              "include": {
-                "names": [
-                  "status"
-                ]
-              }
-            }
-          },
-          {
-            "id": "filterByValue",
-            "options": {
-              "filters": [
-                {
-                  "config": {
-                    "id": "equal",
-                    "options": {
-                      "value": "DISCONNECTED"
-                    }
-                  },
-                  "fieldName": "status"
-                }
-              ],
-              "match": "any",
-              "type": "include"
-            }
-          },
-          {
-            "id": "reduce",
-            "options": {
-              "reducers": [
-                "count"
-              ]
-            }
-          }
-        ],
-        "type": "stat"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 3,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "always",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "decimals": 2,
-            "fieldMinMax": false,
-            "mappings": [],
-            "min": 0,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "red",
-                  "value": 80
-                }
-              ]
-            },
-            "unit": "sci"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 17,
-          "w": 15,
-          "x": 0,
-          "y": 12
-        },
-        "id": 1,
-        "maxDataPoints": 1000000,
-        "options": {
-          "legend": {
-            "calcs": [
-              "max"
-            ],
-            "displayMode": "table",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "tooltip": {
-            "mode": "multi",
-            "sort": "desc"
-          }
-        },
-        "targets": [
-          {
-            "query": "import \"strings\"\n\nfrom(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r[\"_field\"] == \"lag\")\n  |> filter(fn: (r) => r[\"network_reactor\"] == \"false\")\n  |> keep(columns: [\"event_kind_description\", \"id_description\", \"process_name\", \"_time\", \"_value\"])\n  |> group()\n  |> keep(columns: [\"_time\", \"_value\", \"process_name\", \"id_description\"])\n  |> rename(columns: {\"_value\": \"lag in\"})\n  |> group(columns: [\"id_description\"])\n  |> filter(fn: (r) => exists r.id_description)\n",
-            "refId": "A"
-          }
-        ],
-        "title": "Lag (nanoseconds)",
-        "transformations": [
-          {
-            "id": "convertFieldType",
-            "options": {
-              "conversions": [],
-              "fields": {}
-            }
-          },
-          {
-            "id": "convertFieldType",
-            "options": {
-              "conversions": [],
-              "fields": {}
-            }
-          }
-        ],
-        "transparent": true,
-        "type": "timeseries"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "decimals": 2,
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": []
-            },
-            "unit": "sci"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 17,
-          "w": 9,
-          "x": 15,
-          "y": 12
-        },
-        "id": 2,
-        "options": {
-          "displayMode": "gradient",
-          "maxVizHeight": 300,
-          "minVizHeight": 16,
-          "minVizWidth": 8,
-          "namePlacement": "auto",
-          "orientation": "horizontal",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showUnfilled": true,
-          "sizing": "auto",
-          "valueMode": "text"
-        },
-        "pluginVersion": "10.4.1",
-        "targets": [
-          {
-            "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r[\"_field\"] == \"lag\")\n  |> keep(columns: [\"process_name\", \"_value\"])\n  |> group(columns: [\"process_name\"])\n  |> max()\n  |> rename(columns: {_value: \"lag in \"})",
-            "refId": "A"
-          }
-        ],
-        "title": "Max lag (nanoseconds) in the current time interval",
-        "transformations": [
-          {
-            "id": "sortBy",
-            "options": {
-              "fields": {},
-              "sort": [
-                {
-                  "field": "lag {dst_id=\"0\", event_kind_description=\"Reaction ends\", host=\"telegraf\", id_description=\"laggy\", process_name=\"trace\", worker=\"0\"}"
-                }
-              ]
-            }
-          }
-        ],
-        "type": "bargauge"
-      },
-      {
-        "datasource": {
-          "type": "datasource",
-          "uid": "-- Dashboard --"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "continuous-BlYlRd"
-            },
-            "custom": {
-              "fillOpacity": 70,
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineWidth": 0,
-              "spanNulls": true
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": []
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 9,
-          "w": 24,
-          "x": 0,
-          "y": 29
-        },
-        "id": 12,
-        "options": {
-          "alignValue": "left",
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": true
-          },
-          "mergeValues": true,
-          "rowHeight": 0.9,
-          "showValue": "auto",
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "targets": [
-          {
-            "datasource": {
-              "type": "datasource",
-              "uid": "-- Dashboard --"
-            },
-            "panelId": 10,
-            "refId": "A"
-          }
-        ],
-        "title": "Logical time by reactor (logical times represented by their rank order relative to the current time window)",
-        "type": "state-timeline"
-      },
-      {
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "continuous-BlYlRd"
-            },
-            "custom": {
-              "fillOpacity": 70,
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineWidth": 0,
-              "spanNulls": false
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "percentage",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                },
-                {
-                  "color": "#EAB839",
-                  "value": 0
-                },
-                {
-                  "color": "#890F02",
-                  "value": 5
-                },
-                {
-                  "color": "#6ED0E0",
-                  "value": 10
-                },
-                {
-                  "color": "#EF843C",
-                  "value": 15
-                },
-                {
-                  "color": "#E24D42",
-                  "value": 20
-                },
-                {
-                  "color": "#1F78C1",
-                  "value": 25
-                },
-                {
-                  "color": "#BA43A9",
-                  "value": 30
-                },
-                {
-                  "color": "#705DA0",
-                  "value": 35
-                },
-                {
-                  "color": "#508642",
-                  "value": 40
-                },
-                {
-                  "color": "#CCA300",
-                  "value": 45
-                },
-                {
-                  "color": "#447EBC",
-                  "value": 50
-                },
-                {
-                  "color": "#C15C17",
-                  "value": 60
-                },
-                {
-                  "color": "#0A437C",
-                  "value": 70
-                },
-                {
-                  "color": "#6D1F62",
-                  "value": 80
-                },
-                {
-                  "color": "#584477",
-                  "value": 90
-                },
-                {
-                  "color": "#B7DBAB",
-                  "value": 100
-                }
-              ]
-            }
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 9,
-          "w": 24,
-          "x": 0,
-          "y": 38
-        },
-        "id": 10,
-        "maxDataPoints": 1000000,
-        "options": {
-          "alignValue": "center",
-          "legend": {
-            "displayMode": "list",
-            "placement": "bottom",
-            "showLegend": false
-          },
-          "mergeValues": false,
-          "rowHeight": 0.9,
-          "showValue": "always",
-          "tooltip": {
-            "mode": "single",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "10.4.0",
-        "targets": [
-          {
-            "query": "import \"strings\"\nimport \"math\"\n\nreactions = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r.network_reactor == \"false\")\n//  |> filter(fn: (r) => exists r.id_description and not strings.hasPrefix(prefix: \"nr_\", v: r.id_description) and not strings.hasPrefix(prefix: \"ns_\", v: r.id_description))\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\" or r.event_kind_description == \"Reaction ends\")\n  |> group(columns: [\"id_description\"])\n  |> keep(columns: [\"_time\", \"_value\", \"event_kind_description\", \"id_description\"])\n  |> elapsed()\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction ends\")\n  |> map(fn: (r) => ({r with \"Start time\": time(v: uint(v: int(v: r._time) - int(v: int(v: r.elapsed))))}))\n  |> drop(columns: [\"ns\", \"event_kind_description\"])\n  |> rename(columns: {\"_time\": \"End time\"})\n  |> group()\n  |> map(fn: (r) => ({r with \"event\": r._value}))\n  |> sort(columns: [\"_value\"])\n  |> difference(columns: [\"event\"])\n  |> map(fn: (r) => ({r with \"event\": if r.event > 0 then 1 else 0}))\n  |> cumulativeSum(columns: [\"event\"])\n  //|> sort(columns: [\"event\"], desc: true)\n  |> drop(columns: [\"_value\"])\n\nret = reactions\n  |> pivot(\n    rowKey: [\"End time\", \"Start time\"],\n    columnKey: [\"id_description\"],\n    valueColumn: \"event\"\n  )\n\nret",
-            "refId": "A"
-          }
-        ],
-        "title": "Reactions by reactor",
-        "type": "state-timeline"
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
       }
-    ],
-    "refresh": "5s",
-    "schemaVersion": 39,
-    "tags": [],
-    "templating": {
-      "list": []
+    ]
+  },
+  "description": "A collection of Grafana panels to monitor a federated LF application",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 4,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 0,
+        "y": 0
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 8,
+          "refId": "A"
+        }
+      ],
+      "title": "Processes online",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "notEqual",
+                  "options": {
+                    "value": "DISCONNECTED"
+                  }
+                },
+                "fieldName": "status"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "count"
+            ]
+          }
+        }
+      ],
+      "type": "stat"
     },
-    "time": {
-      "from": "now-30s",
-      "to": "now"
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ns"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 11,
+        "x": 5,
+        "y": 0
+      },
+      "hideTimeOverride": true,
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "frameIndex": 0,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "process_name"
+          }
+        ]
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb"
+          },
+          "query": "import \"join\"\nimport \"system\"\nimport \"array\"\nimport \"internal/debug\"\n\nheartbeats = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => (r[\"_measurement\"] == \"FederateNames\" and r[\"_field\"] == \"other_process_name\"))\n  |> rename(columns: {\"_value\": \"other_process_name\"})\n  |> group()\n  |> keep(columns: [\"other_process_name\", \"_time\", \"process_name\"])\n\nlatest_tracepoints = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => (r[\"_measurement\"] == \"TraceRecord\" and r[\"_field\"] == \"process_id\"))\n  |> rename(columns: {\"_value\": \"process_id\"})\n  |> keep(columns: [\"process_id\", \"_time\", \"process_name\"])\n  |> group(columns: [\"process_id\"]) |> max(column: \"_time\") |> group()\n\nisEmpty = (tables) => {\n\tcolumnsArray = tables\n\t\t|> columns()\n\t\t|> findColumn(fn: (key) => true, column: \"_value\")\n\treturn length(arr: columnsArray) == 0\n}\n\nd = join.left(\n  left: heartbeats |> keep(columns: [\"other_process_name\"]) |> unique(column: \"other_process_name\"),\n  right: if isEmpty(tables: latest_tracepoints)\n    then array.from(rows: [{\n      process_id: debug.null(type: \"int\"),\n      _time: time(v: 0),\n      process_name: debug.null(type: \"string\")}])\n    else latest_tracepoints,\n  on: (l, r) => l.other_process_name == r.process_name,\n  as: (l, r) => ({l with\n    other_time: r._time\n  }))\n  |> group(columns: [\"other_process_name\"])\n  |> map(fn: (r) => ({r with other_time: if exists r.other_time then r.other_time else time(v: 0)}))\n  |> max(column: \"other_time\")\n  |> group()\ne = join.left(\n  left: d, right: heartbeats,\n  on: (l, r) => l.other_process_name == r.process_name,\n  as: (l, r) => (if not exists l.other_time or r._time > l.other_time\n    then (if not exists r._time then {l with greater_time: time(v: 0), last_message: \"NONE\"} else {l with greater_time: r._time, last_message: \"HEARTBEAT\"})\n    else {l with greater_time: l.other_time, last_message: \"TRACEPOINT\"})\n  )\n  |> keep(columns: [\"greater_time\", \"other_process_name\", \"last_message\"])\n  |> group(columns: [\"other_process_name\"])\n  |> max(column: \"greater_time\")\n  |> group()\n  |> map(fn: (r) => ({r with time_since_last_activity:\n    if r.greater_time == time(v: 0)\n     then debug.null(type: \"time\")\n     else (int(v: system.time()) - int(v: r.greater_time))}))\n\nret = e\n  |> drop(columns: [\"greater_time\"])\n  |> map(fn: (r) => ({r with status: if not exists r.time_since_last_activity\n    then \"DISCONNECTED\"\n    else (if r.last_message == \"TRACEPOINT\" then \"OK\" else \"QUIET\")}))\n  |> drop(columns: [\"last_message\"])\n  |> rename(columns: {\n    \"other_process_name\": \"Process\",\n    \"time_since_last_activity\": \"Age of latest data\"\n    })\nret",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": "now-30s",
+      "title": "Time since last activity",
+      "type": "table"
     },
-    "timepicker": {
-      "nowDelay": "",
-      "refresh_intervals": [
-        "1s",
-        "5s",
-        "10s",
-        "30s",
-        "1m",
-        "5m"
-      ]
+    {
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "frameIndex": 1,
+        "showHeader": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "query": "import \"strings\"\n\nfrom(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r[\"_field\"] == \"process_id\")\n  |> filter(fn: (r) => exists r.id_description and not strings.hasPrefix(prefix: \"nr_\", v: r.id_description) and not strings.hasPrefix(prefix: \"ns_\", v: r.id_description))\n  |> filter(fn: (r) => r[\"event_kind_description\"] == \"Reaction starts\")\n  |> group()\n  |> drop(columns: [\"host\", \"worker\", \"dst_id\", \"src_id\", \"_field\", \"_time\", \"process_name\", \"_measurement\"])\n  |> group(columns: [\"id_description\"])\n  |> count()\n  |> group()\n  |> sort(desc: true)\n  |> rename(columns: {id_description: \"Reactor\", _value: \"Number of reaction executions\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Invocations by reactor",
+      "type": "table"
     },
-    "timezone": "",
-    "title": "LF Tracing",
-    "version": 1,
-    "weekStart": ""
-  }
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "-- Dashboard --"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 0,
+        "y": 6
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "datasource",
+            "uid": "-- Dashboard --"
+          },
+          "panelId": 8,
+          "refId": "A"
+        }
+      ],
+      "title": "Processes disconnected",
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "DISCONNECTED"
+                  }
+                },
+                "fieldName": "status"
+              }
+            ],
+            "match": "any",
+            "type": "include"
+          }
+        },
+        {
+          "id": "reduce",
+          "options": {
+            "reducers": [
+              "count"
+            ]
+          }
+        }
+      ],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 1000,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 3,
+            "scaleDistribution": {
+              "log": 10,
+              "type": "log"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 2,
+          "fieldMinMax": false,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ns"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 17,
+        "w": 15,
+        "x": 0,
+        "y": 12
+      },
+      "id": 1,
+      "maxDataPoints": 1000000,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb"
+          },
+          "query": "import \"strings\"\n\nungrouped = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r[\"network_reactor\"] == \"false\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\")\n  |> keep(columns: [\"event_kind_description\", \"id_description\", \"process_name\", \"_time\", \"_value\", \"\"])\n  |> group(columns: [\"id_description\", \"_value\"])\n  |> map(fn: (r) => ({r with \"lag in\": int(v: r._time) - int(v: r._value)}))\n  |> max()\n\n\nret = ungrouped\n  |> keep(columns: [\"_time\", \"lag in\", \"process_name\", \"id_description\"])\n  |> group(columns: [\"id_description\"])\n  |> filter(fn: (r) => exists r.id_description)\n\nret",
+          "refId": "A"
+        }
+      ],
+      "title": "Lag",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [],
+            "fields": {}
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [],
+            "fields": {}
+          }
+        }
+      ],
+      "transparent": true,
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ns"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 9,
+        "x": 15,
+        "y": 12
+      },
+      "id": 2,
+      "options": {
+        "displayMode": "gradient",
+        "maxVizHeight": 300,
+        "minVizHeight": 16,
+        "minVizWidth": 8,
+        "namePlacement": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "sizing": "auto",
+        "valueMode": "text"
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "query": "from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r[\"_field\"] == \"lag\")\n  |> keep(columns: [\"process_name\", \"_value\"])\n  |> group(columns: [\"process_name\"])\n  |> max()\n  |> rename(columns: {_value: \"lag in \"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Max lag (nanoseconds) in the current time interval",
+      "transformations": [
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "lag {dst_id=\"0\", event_kind_description=\"Reaction ends\", host=\"telegraf\", id_description=\"laggy\", process_name=\"trace\", worker=\"0\"}"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "bargauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ns"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 9,
+        "x": 15,
+        "y": 19
+      },
+      "id": 13,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "10.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb"
+          },
+          "query": "import \"strings\"\nimport \"math\"\n\nreactions = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r.network_reactor == \"false\")\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\" or r.event_kind_description == \"Reaction ends\")\n  |> map(fn: (r) => ({ r with reaction_id: \"${r[\"process_name\"]}_${r[\"dst_id\"]}\"}))\n  |> drop(columns: [\"process_name\", \"dst_id\"])\n  |> group(columns: [\"reaction_id\"])\n  |> pivot(\n    rowKey: [\"_value\"],\n    columnKey: [\"event_kind_description\"],\n    valueColumn: \"_time\"\n  )\n  |> map(fn: (r) => ({ r with _value: uint(v: r[\"Reaction ends\"]) - uint(v: r[\"Reaction starts\"]) }))\n  |> drop(columns: [\"Reaction starts\", \"Reaction ends\"])\n  |> max()\n  |> group()\n  \n  reactions\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Reaction WCET",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "fillOpacity": 70,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 0,
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "id": 14,
+      "options": {
+        "alignValue": "left",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "mergeValues": false,
+        "rowHeight": 0.9,
+        "showValue": "never",
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb"
+          },
+          "query": "import \"strings\"\nimport \"math\"\nimport \"internal/debug\"\n\nreactions = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r.network_reactor == \"false\")\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\" or r.event_kind_description == \"Reaction ends\")\n  |> group(columns: [\"id_description\"])\n  |> keep(columns: [\"_time\", \"_value\", \"event_kind_description\", \"id_description\", \"extra_delay\"])\n  |> sort(columns: [\"_time\"])\n  |> map(fn: (r) => ({r with \"extra_delay\": int(v: r.extra_delay)}))\n  |> map(fn: (r) => ({r with \"event\": if r.event_kind_description == \"Reaction ends\" then 0 else (if int(v: r._time) > r._value + r.extra_delay and r.extra_delay > 0 then 2 else 1)}))\n  |> group()\n  |> drop(columns: [\"_value\"])\n\nret = reactions\n  |> pivot(\n    rowKey: [\"_time\"],\n    columnKey: [\"id_description\"],\n    valueColumn: \"event\"\n  )\n\nret",
+          "refId": "A"
+        }
+      ],
+      "title": "Reaction executions (red indicates deadline violation)",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-greens"
+          },
+          "custom": {
+            "fillOpacity": 70,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 0,
+            "spanNulls": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 0
+              },
+              {
+                "color": "#890F02",
+                "value": 5
+              },
+              {
+                "color": "#6ED0E0",
+                "value": 10
+              },
+              {
+                "color": "#EF843C",
+                "value": 15
+              },
+              {
+                "color": "#E24D42",
+                "value": 20
+              },
+              {
+                "color": "#1F78C1",
+                "value": 25
+              },
+              {
+                "color": "#BA43A9",
+                "value": 30
+              },
+              {
+                "color": "#705DA0",
+                "value": 35
+              },
+              {
+                "color": "#508642",
+                "value": 40
+              },
+              {
+                "color": "#CCA300",
+                "value": 45
+              },
+              {
+                "color": "#447EBC",
+                "value": 50
+              },
+              {
+                "color": "#C15C17",
+                "value": 60
+              },
+              {
+                "color": "#0A437C",
+                "value": 70
+              },
+              {
+                "color": "#6D1F62",
+                "value": 80
+              },
+              {
+                "color": "#584477",
+                "value": 90
+              },
+              {
+                "color": "#B7DBAB",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "id": 10,
+      "maxDataPoints": 1000000,
+      "options": {
+        "alignValue": "center",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "mergeValues": false,
+        "rowHeight": 0.9,
+        "showValue": "never",
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "10.4.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb"
+          },
+          "query": "import \"strings\"\nimport \"math\"\nimport \"internal/debug\"\n\nreactions = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r.network_reactor == \"false\")\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\" or r.event_kind_description == \"Reaction ends\")\n  |> group(columns: [\"id_description\"])\n  |> keep(columns: [\"_time\", \"_value\", \"event_kind_description\", \"id_description\"])\n  |> group()\n  |> map(fn: (r) => ({r with \"event\": r._value}))\n  |> sort(columns: [\"_value\"])\n  |> difference(columns: [\"event\"])\n  |> map(fn: (r) => ({r with \"event\": if r.event > 0 then 1 else 0}))\n  |> cumulativeSum(columns: [\"event\"])\n  |> sort(columns: [\"id_description\", \"_time\"])\n  |> map(fn: (r) => ({r with \"event\": if r.event_kind_description == \"Reaction ends\" then -1 else r.event}))\n  //|> sort(columns: [\"event\"], desc: true)\n  |> drop(columns: [\"_value\"])\n\nret = reactions\n  |> pivot(\n    rowKey: [\"_time\"],\n    columnKey: [\"id_description\"],\n    valueColumn: \"event\"\n  )\n\nret",
+          "refId": "A"
+        }
+      ],
+      "title": "Reaction executions (color indicates logical time)",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "continuous-RdYlGr"
+          },
+          "custom": {
+            "fillOpacity": 70,
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineWidth": 0,
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 50
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 46
+      },
+      "id": 16,
+      "options": {
+        "alignValue": "center",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "mergeValues": true,
+        "rowHeight": 1,
+        "showValue": "never",
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb"
+          },
+          "query": "import \"strings\"\nimport \"math\"\nimport \"internal/debug\"\nimport \"experimental/array\"\nimport \"join\"\n\n\nset_priority = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r.event_kind_description == \"User-defined valued event\")\n  |> filter(fn: (r) => r.id_description == \"Set priority\")\n  |> filter(fn: (r) => r._measurement == \"TraceRecord\")\n  |> filter(fn: (r) => r._field == \"logical_time\")\n  |> keep(columns: [\"process_name\", \"_time\", \"extra_delay\"])\n  |> group(columns: [\"process_name\"])\n  |> sort(columns: [\"_time\"])\n  |> group()\n  |> map(fn: (r) => ({r with \"extra_delay\": int(v: r.extra_delay)}))\n  |> rename(columns: {extra_delay: \"extra_delay\", _time: \"_time\", process_name: \"process_name\"})\n\n// initial_value = array.from(rows: [set_priority |> first() ])\n\ninitial_value = set_priority |> first(column: \"extra_delay\") |> map(fn: (r) => ({r with \"_time\": v.timeRangeStart}))\n\nunioned = union(tables: [initial_value, set_priority])\n\n//unioned = join.full(\n//  left: set_priority,\n//  right: initial_value,\n//  on: (l, r) => false,\n//  as: (l, r) => if exists l.extra_delay then l else r\n//)\n\n// set_priority\n\nunioned |> pivot(rowKey: [\"_time\"], columnKey: [\"process_name\"], valueColumn: \"extra_delay\")\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Priority by process over time",
+      "type": "state-timeline"
+    },
+    {
+      "datasource": {
+        "type": "influxdb"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 52
+      },
+      "id": 15,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
+        "orientation": "auto",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "maxHeight": 600,
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb"
+          },
+          "query": "import \"strings\"\nimport \"math\"\nimport \"internal/debug\"\n\nreactions = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r.network_reactor == \"false\")\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\")\n  |> group(columns: [\"id_description\"])\n  |> keep(columns: [\"_time\", \"_value\", \"id_description\", \"extra_delay\"])\n  |> map(fn: (r) => ({r with \"extra_delay\": int(v: r.extra_delay)}))\n  |> map(fn: (r) => ({r with \"Deadline violations per scheduled reaction\": if r.extra_delay < 0 then debug.null(type: \"int\") else if int(v: r._time) > r._value + r.extra_delay then 1 else 0}))\n  |> drop(columns: [\"extra_delay\", \"_value\"])\n  |> mean(column: \"Deadline violations per scheduled reaction\")\n  |> group()\n  |> filter(fn: (r) => exists r[\"Deadline violations per scheduled reaction\"])\nreactions",
+          "refId": "A"
+        }
+      ],
+      "title": "Deadline violations per scheduled reaction",
+      "type": "barchart"
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now - 10s",
+    "to": "now"
+  },
+  "timeRangeUpdatedDuringEditOrView": false,
+  "timepicker": {
+    "nowDelay": "",
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ]
+  },
+  "timezone": "",
+  "title": "LF Tracing",
+  "uid": "cdl2kurnoc074d",
+  "version": 4,
+  "weekStart": ""
+}
+
