@@ -1,3 +1,0 @@
-This folder contains persistent configuration for InfluxDB.
-
-If the file `influx-configs` is present in this folder, it is read in by Influx DB. If the file does not exist, it is created when InfluxDB initally sets up.

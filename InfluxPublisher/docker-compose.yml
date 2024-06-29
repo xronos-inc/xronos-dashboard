@@ -1,0 +1,51 @@
+name: xronos-dashboard
+
+include:
+ - ../docker-compose.yml
+
+services:
+  # Use a base image to install Python requirements
+  test-publisher-py-base:
+    image: test-publisher-py-base
+    pull_policy: missing
+    build:
+      context: ./py/
+      dockerfile: baseimage.Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 0
+
+  test-publisher-py:
+    pull_policy: missing
+    build:
+      context: ./py/src-gen/InfluxPublisher/
+    container_name: test-publisher-py
+    hostname: test-publisher-py
+    networks:
+      - xronos-dashboard
+    links:
+      - telegraf
+    environment:
+      LF_TELEGRAF_HOST_NAME: telegraf
+    stop_signal: SIGINT
+    depends_on:
+      telegraf:
+        condition: service_healthy
+
+  test-publisher-c:
+    pull_policy: missing
+    build:
+      context: ./c/src-gen/InfluxPublisher/
+    container_name: test-publisher-c
+    hostname: test-publisher-c
+    networks:
+      - xronos-dashboard
+    links:
+      - telegraf
+    environment:
+      LF_TELEGRAF_HOST_NAME: telegraf
+    stop_signal: SIGINT
+    depends_on:
+      telegraf:
+        condition: service_healthy
+    tty: true
