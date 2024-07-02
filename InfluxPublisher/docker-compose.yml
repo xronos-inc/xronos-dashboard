@@ -26,11 +26,13 @@ services:
     links:
       - telegraf
     environment:
-      LF_TELEGRAF_HOST_NAME: telegraf
+     LF_TELEGRAF_HOST_NAME: ${LF_TELEGRAF_HOST_NAME:-host.docker.internal}
     stop_signal: SIGINT
     depends_on:
       telegraf:
         condition: service_healthy
+    extra_hosts:
+     - "host.docker.internal:host-gateway"
 
   test-publisher-c:
     pull_policy: missing
@@ -43,9 +45,11 @@ services:
     links:
       - telegraf
     environment:
-      LF_TELEGRAF_HOST_NAME: telegraf
+     LF_TELEGRAF_HOST_NAME: ${LF_TELEGRAF_HOST_NAME:-host.docker.internal}
     stop_signal: SIGINT
     depends_on:
       telegraf:
         condition: service_healthy
+    extra_hosts:
+     - "host.docker.internal:host-gateway"
     tty: true

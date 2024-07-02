@@ -6,7 +6,9 @@ target Python {
         "influx_line.py"
     ],
     docker: {
-        FROM: "test-publisher-py-base"
+        builder-base: "xronosinc/lf-trace-plugin-api:py",
+        runner-base: "test-publisher-py-base",
+        no-build: true
     },
     tracing: true,
     trace-plugin: "telegraf_lf_trace_plugin"
