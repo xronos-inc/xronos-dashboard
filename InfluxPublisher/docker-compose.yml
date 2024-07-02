@@ -4,17 +4,6 @@ include:
  - ../docker-compose.yml
 
 services:
-  # Use a base image to install Python requirements
-  test-publisher-py-base:
-    image: test-publisher-py-base
-    pull_policy: missing
-    build:
-      context: ./py/
-      dockerfile: baseimage.Dockerfile
-    deploy:
-      mode: replicated
-      replicas: 0
-
   test-publisher-py:
     pull_policy: missing
     build:

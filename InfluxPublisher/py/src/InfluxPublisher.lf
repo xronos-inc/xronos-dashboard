@@ -3,12 +3,14 @@
 
 target Python {
     files: [
-        "influx_line.py"
+        "influx_line.py",
+        "requirements.txt"
     ],
     docker: {
         builder-base: "xronosinc/lf-trace-plugin-api:py",
-        runner-base: "test-publisher-py-base",
-        no-build: true
+        runner-base: "builder",
+        no-build: true,
+        pre-build-script: requirements.sh,
     },
     tracing: true,
     trace-plugin: "telegraf_lf_trace_plugin"
