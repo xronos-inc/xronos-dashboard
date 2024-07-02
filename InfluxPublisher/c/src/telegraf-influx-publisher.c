@@ -59,8 +59,6 @@ int telegraf_init_socket(void) {
     int sockfd;
     struct sockaddr_in server_addr;
 
-    printf("Initializing socket...\n");
-
     // Create socket (SOCK_DGRAM for UDP)
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0) {
@@ -78,8 +76,6 @@ int telegraf_init_socket(void) {
         perror("Error setting socket to non-blocking");
         return errno;
     }
-
-    printf("Done initializing socket\n");
 
     return sockfd;
 }
