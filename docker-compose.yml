@@ -87,6 +87,7 @@ services:
 
 networks:
   xronos-dashboard:
+    name: xronos-dashboard
     driver: bridge
 
 volumes:
