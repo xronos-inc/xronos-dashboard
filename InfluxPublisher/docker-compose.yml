@@ -15,7 +15,7 @@ services:
     links:
       - telegraf
     environment:
-     LF_TELEGRAF_HOST_NAME: ${LF_TELEGRAF_HOST_NAME:-host.docker.internal}
+      LF_TELEGRAF_HOST_NAME: ${LF_TELEGRAF_HOST_NAME:-host.docker.internal}
     stop_signal: SIGINT
     depends_on:
       telegraf:
@@ -34,7 +34,7 @@ services:
     links:
       - telegraf
     environment:
-     LF_TELEGRAF_HOST_NAME: ${LF_TELEGRAF_HOST_NAME:-host.docker.internal}
+      LF_TELEGRAF_HOST_NAME: ${LF_TELEGRAF_HOST_NAME:-host.docker.internal}
     stop_signal: SIGINT
     depends_on:
       telegraf:
