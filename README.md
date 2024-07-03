@@ -42,9 +42,9 @@ InfluxDB, Telegraf and Grafana services will start.
 
 Generic Lingua Franca reactors to publish to Xronos Dashboard are located in [InfluxPublisher/](InfluxPublisher/). Each language provides an `InfluxLinePublisher` reactor, and example applications to publish to the dashboard.
 
-C: [InfluxPublisher/c](InfluxPublisher/c)
+C: [InfluxPublisher/c](InfluxPublisher/c/src/InfluxPublisher.lf)
 
-Python: [InfluxPublisher/py](InfluxPublisher/py)
+Python: [InfluxPublisher/py](InfluxPublisher/py/src/InfluxPublisher.lf)
 
 See [InfluxPublisher/README.md](InfluxPublisher/README.md) to build and run the example publishers.
 
