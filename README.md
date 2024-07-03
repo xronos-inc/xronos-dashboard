@@ -46,7 +46,7 @@ C: [InfluxPublisher/c](InfluxPublisher/c)
 
 Python: [InfluxPublisher/py](InfluxPublisher/py)
 
-See the [InfluxPublisher/README.md] to build and run the example publishers.
+See [InfluxPublisher/README.md](InfluxPublisher/README.md) to build and run the example publishers.
 
 ## User-Provided Dashboards
 
