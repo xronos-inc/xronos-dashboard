@@ -17,4 +17,4 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
    docker compose up
    ```
 
-   Open Grafana on `http://0.0.0.0:3000` and open the dashboard "Telegraf Test Publishers".
+   Open Grafana on `http://localhost:3000` and open the dashboard "Telegraf Test Publishers".
