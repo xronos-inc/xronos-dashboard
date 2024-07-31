@@ -1,13 +1,13 @@
 name: xronos-dashboard
 
 include:
- - ../docker-compose.yml
+  - ../docker-compose.yml
 
 services:
   test-publisher-py:
     pull_policy: missing
     build:
-      context: ./py/src-gen/InfluxPublisher/
+      context: ./py/src-gen/PyInfluxPublisher/
     container_name: test-publisher-py
     hostname: test-publisher-py
     networks:
@@ -21,12 +21,12 @@ services:
       telegraf:
         condition: service_healthy
     extra_hosts:
-     - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"
 
   test-publisher-c:
     pull_policy: missing
     build:
-      context: ./c/src-gen/InfluxPublisher/
+      context: ./c/src-gen/CInfluxPublisher/
     container_name: test-publisher-c
     hostname: test-publisher-c
     networks:
@@ -40,5 +40,5 @@ services:
       telegraf:
         condition: service_healthy
     extra_hosts:
-     - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"
     tty: true
