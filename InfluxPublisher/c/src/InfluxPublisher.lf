@@ -75,7 +75,7 @@ reactor InfluxLinePublisher(server_host: char[] = "0.0.0.0", server_port: int = 
 
             self->telegraf_session_initialized = true;
         }
-    =}
+    =} deadline(10 ms) {= =}
 
     reaction(shutdown) {=
         close(self->telegraf_socket_fd);
@@ -100,6 +100,12 @@ reactor SineWave(sample_rate_ms = 100 ms) {
 
     timer t(0, sample_rate_ms)
     reaction(t) -> measurement {=
+        long long start = lf_time_physical();
+        if (start % 10 == 0) {
+            while (lf_time_physical() - start < 10000000) {
+                // busy wait for 10ms
+            }
+        }
         self->influx_line.timestamp_ns = lf_time_physical();
         // for a single field, snprintf is nice shorthand,
         // but for multiple fields consider using tagset_append() instead
@@ -117,7 +123,7 @@ reactor SineWave(sample_rate_ms = 100 ms) {
 }
 
 main reactor {
-    publisher = new InfluxLinePublisher()
-    producer = new SineWave()
-    producer.measurement -> publisher.line
+    c_publisher = new InfluxLinePublisher()
+    c_producer = new SineWave()
+    c_producer.measurement -> c_publisher.line
 }

@@ -96,7 +96,7 @@ reactor SineWave(sample_rate_ms = 20 ms) {
 }
 
 main reactor {
-    publisher = new InfluxLinePublisher()
-    producer = new SineWave()
-    producer.measurement -> publisher.line
+    py_publisher = new InfluxLinePublisher()
+    py_producer = new SineWave()
+    py_producer.measurement -> py_publisher.line
 }
