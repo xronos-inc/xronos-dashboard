@@ -1,0 +1,38 @@
+// SPDX-FileCopyrightText: © 2024 Xronos Inc.
+// SPDX-License-Identifier: BSD-3-Clause
+target C {
+  docker: {
+    builder-base: "xronosinc/lf-trace-plugin-api:c",
+    no-build: true
+  },
+  tracing: true,
+  trace-plugin: "telegraf_lf_trace_plugin"
+}
+
+reactor Consumer {
+  input in: int
+
+  reaction(in) {=  =} deadline(10 ms) {=  =}
+}
+
+reactor Producer {
+  output out: int
+
+  timer t(0, 100 ms)
+
+  reaction(t) -> out {=
+    long long start = lf_time_physical();
+    if (start % 10 == 0) {
+        while (lf_time_physical() - start < 10000000) {
+            // busy wait for 10ms
+        }
+    }
+    lf_set(out, 1);
+  =}
+}
+
+main reactor {
+  c_publisher = new Consumer()
+  c_producer = new Producer()
+  c_producer.out -> c_publisher.in
+}

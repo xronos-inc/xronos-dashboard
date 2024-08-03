@@ -1,0 +1,25 @@
+name: xronos-dashboard
+
+include:
+  - ../../docker-compose.yml
+
+services:
+  test-publisher-c:
+    pull_policy: missing
+    build:
+      context: ./c/src-gen/InfluxPublisher/
+    container_name: test-publisher-c
+    hostname: test-publisher-c
+    networks:
+      - xronos-dashboard
+    links:
+      - telegraf
+    environment:
+      LF_TELEGRAF_HOST_NAME: ${LF_TELEGRAF_HOST_NAME:-host.docker.internal}
+    stop_signal: SIGINT
+    depends_on:
+      telegraf:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tty: true
