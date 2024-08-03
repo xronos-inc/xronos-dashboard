@@ -7,8 +7,8 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
 1. Compile the LF example applications:
 
    ```bash
-   cd c && lfc src/InfluxPublisher.lf; cd ..
-   cd py && lfc src/InfluxPublisher.lf; cd ..
+   (cd c && lfc src/InfluxPublisher.lf);
+   (cd py && lfc src/InfluxPublisher.lf);
    ```
 
 1. Start Xronos Dashboard and LF example applications:
