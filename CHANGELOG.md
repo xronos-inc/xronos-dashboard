@@ -8,14 +8,14 @@
   - This also changes the panel titled "Reaction executions (opacity indicates logical time and microstep)" to use opacity to indicate logical time and microstep instead of using color to indicate logical time. This can make the panel difficult to read without zooming in, but for technical reasons, it is necessary in order to enable this bugfix.
   - Example 1:
     - Before this bugfix, reaction executions are often dropped or reported as having the wrong execution times, seemingly at random:
-      ![after](documentation/images/changelog/2024-08-05/multi_tread_master.png)
+      ![after](docs/images/changelog/2024-08-05/multi_tread_master.png)
     - After this bugfix, reaction executions are reported correctly, clearly showing that we periodically execute a 50-millisecond reaction in reactor `a` followed by short-running reactions in the other reactors:
-      ![after](documentation/images/changelog/2024-08-05/multi_tread_corrected.png)
+      ![after](docs/images/changelog/2024-08-05/multi_tread_corrected.png)
   - Example 2 is similar to example 1:
     - Before:
-      ![before](documentation/images/changelog/2024-08-05/single_tread_master.png)
+      ![before](docs/images/changelog/2024-08-05/single_tread_master.png)
     - After:
-      ![after](documentation/images/changelog/2024-08-05/single_tread_corrected.png)
+      ![after](docs/images/changelog/2024-08-05/single_tread_corrected.png)
 
 ### Improvements
 
