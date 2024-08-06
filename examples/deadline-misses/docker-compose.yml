@@ -4,12 +4,12 @@ include:
   - ../../docker-compose.yml
 
 services:
-  test-publisher-c:
+  deadline-misses-c:
     pull_policy: missing
     build:
-      context: ./c/src-gen/InfluxPublisher/
-    container_name: test-publisher-c
-    hostname: test-publisher-c
+      context: ./c/src-gen/DeadlineMisses/
+    container_name: deadline-misses-c
+    hostname: deadline-misses-c
     networks:
       - xronos-dashboard
     links:

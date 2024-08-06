@@ -12,7 +12,7 @@ target C {
 reactor Consumer {
   input in: int
 
-  reaction(in) {=  =} deadline(10 ms) {=  =}
+  reaction(in) {=  =} deadline(100 ms) {=  =}
 }
 
 reactor Producer {
@@ -20,11 +20,18 @@ reactor Producer {
 
   timer t(0, 100 ms)
 
+  reaction(startup) {=
+    // seed random number generator
+    srand((unsigned int) time(NULL));
+  =}
+
   reaction(t) -> out {=
     long long start = lf_time_physical();
-    if (start % 10 == 0) {
-        while (lf_time_physical() - start < 10000000) {
-            // busy wait for 10ms
+    // periodically block for a long time
+    if (((double)rand() / RAND_MAX) < 0.2) {
+        while (lf_time_physical() - start < 100e6) {
+            // busy wait for 100ms
+            //asm("NOP");
         }
     }
     lf_set(out, 1);
@@ -32,7 +39,7 @@ reactor Producer {
 }
 
 main reactor {
-  c_publisher = new Consumer()
   c_producer = new Producer()
-  c_producer.out -> c_publisher.in
+  c_consumer = new Consumer()
+  c_producer.out -> c_consumer.in
 }

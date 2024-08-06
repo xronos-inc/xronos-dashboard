@@ -7,7 +7,7 @@ This folder contains an example application involving deadline misses that can b
 1. Compile the LF example application:
 
    ```bash
-   (cd c && lfc src/InfluxPublisher.lf)
+   (cd c && lfc src/DeadlineMisses.lf)
    ```
 
 1. Start Xronos Dashboard and LF example application:
