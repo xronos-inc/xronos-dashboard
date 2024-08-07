@@ -6,15 +6,15 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
 
 1. Compile the LF example applications:
 
-    ```bash
-    cd c && lfc src/InfluxPublisher.lf
-    cd py && lfc src/InfluxPublisher.lf
-    ```
+   ```bash
+   (cd c && lfc src/InfluxPublisher.lf);
+   (cd py && lfc src/InfluxPublisher.lf);
+   ```
 
 1. Start Xronos Dashboard and LF example applications:
 
-    ```bash
-    docker compose up
-    ```
+   ```bash
+   docker compose up
+   ```
 
-    Open Grafana on `http://0.0.0.0:3000` and open the dashboard "Telegraf Test Publishers".
+   Open Grafana on `http://localhost:3000`. Open the dashboard "Telegraf Test Publishers" to view the application-level trace data, or open the dashboard "LF Tracing" to view the trace data that is produced by the LF runtime.
