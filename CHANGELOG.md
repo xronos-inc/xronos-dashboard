@@ -16,7 +16,7 @@
       ![before](docs/images/changelog/2024-08-05/single_tread_master.png)
     - After:
       ![after](docs/images/changelog/2024-08-05/single_tread_corrected.png)
-- Fix a bug involving unclear and non-unique names that made the "Reaction WCET" panel difficult to interpret. This panel now reports distinct data for each reaction and does not aggregate data across distinct reactions in the same process.
+- Fix a bug involving unclear and non-unique names that made the "Reaction WCET" panel difficult to interpret. This panel now reports distinct data for each reaction and does not aggregate data across distinct reactions in the same federate.
   - Before:
     ![before](docs/images/changelog/2024-08-05/reaction-wcets-master.png)
   - After:
