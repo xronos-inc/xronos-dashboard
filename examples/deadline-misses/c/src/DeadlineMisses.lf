@@ -26,13 +26,8 @@ reactor Producer {
   =}
 
   reaction(t) -> out {=
-    long long start = lf_time_physical();
-    // periodically block for a long time
     if (((double)rand() / RAND_MAX) < 0.2) {
-        while (lf_time_physical() - start < 100e6) {
-            // busy wait for 100ms
-            //asm("NOP");
-        }
+      lf_sleep(MSEC(100));
     }
     lf_set(out, 1);
   =}
