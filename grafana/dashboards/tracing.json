@@ -562,7 +562,7 @@
       "datasource": {
         "type": "influxdb"
       },
-      "description": "This is the maximum observed reaction execution time in the current time interval, per process, so it does not rule out the possibility that reactions might take longer in the future. This information can be used to identify processes that have slow or misbehaving reactions.",
+      "description": "This is the maximum observed execution time for each reaction that was executed in the current time interval. It does not rule out the possibility that reactions might take longer in the future.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -643,7 +643,7 @@
           "datasource": {
             "type": "influxdb"
           },
-          "query": "import \"strings\"\nimport \"math\"\n\nreactions = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r.network_reactor == \"false\")\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\" or r.event_kind_description == \"Reaction ends\")\n  |> map(fn: (r) => ({ r with reaction_id: \"${r[\"process_name\"]}_${r[\"dst_id\"]}\"}))\n  |> drop(columns: [\"process_name\", \"dst_id\"])\n  |> group(columns: [\"reaction_id\"])\n  |> pivot(\n    rowKey: [\"_value\"],\n    columnKey: [\"event_kind_description\"],\n    valueColumn: \"_time\"\n  )\n  |> map(fn: (r) => ({ r with _value: uint(v: r[\"Reaction ends\"]) - uint(v: r[\"Reaction starts\"]) }))\n  |> drop(columns: [\"Reaction starts\", \"Reaction ends\"])\n  |> max()\n  |> group()\n  \n  reactions\n",
+          "query": "import \"strings\"\nimport \"math\"\n\nreactions = from(bucket: v.defaultBucket)\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"TraceRecord\")\n  |> filter(fn: (r) => r.network_reactor == \"false\")\n  |> filter(fn: (r) => r[\"_field\"] == \"logical_time\")\n  |> filter(fn: (r) => r.event_kind_description == \"Reaction starts\" or r.event_kind_description == \"Reaction ends\")\n  |> map(fn: (r) => ({ r with reaction_id: \"${r[\"id_description\"]} reaction ${r[\"dst_id\"]}\"}))\n  |> group(columns: [\"reaction_id\"])\n  |> pivot(\n    rowKey: [\"_value\"],\n    columnKey: [\"event_kind_description\"],\n    valueColumn: \"_time\"\n  )\n  |> map(fn: (r) => ({ r with _value: uint(v: r[\"Reaction ends\"]) - uint(v: r[\"Reaction starts\"]) }))\n  |> drop(columns: [\"Reaction starts\", \"Reaction ends\"])\n  |> max()\n  |> group()\n  |> sort(columns: [\"reaction_id\"])\n  \nreactions",
           "refId": "A"
         }
       ],
