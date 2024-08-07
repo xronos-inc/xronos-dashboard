@@ -26,6 +26,7 @@ reactor Producer {
   =}
 
   reaction(t) -> out {=
+    // periodically block for a long time
     if (((double)rand() / RAND_MAX) < 0.2) {
       lf_sleep(MSEC(100));
     }
