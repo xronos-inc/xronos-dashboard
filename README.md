@@ -48,6 +48,10 @@ Python: [InfluxPublisher/py](InfluxPublisher/py/src/InfluxPublisher.lf)
 
 See [InfluxPublisher/README.md](InfluxPublisher/README.md) to build and run the example publishers.
 
+## Examples
+
+You can find additional examples in the `examples/` directory.
+
 ## User-Provided Dashboards
 
 Grafana is configured by default to look for dashboards in the `/dashboards` path of the container. You can provide your own dashboards by mapping a folder from your host into this location.

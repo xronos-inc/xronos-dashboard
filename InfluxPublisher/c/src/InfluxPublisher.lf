@@ -117,7 +117,7 @@ reactor SineWave(sample_rate_ms = 100 ms) {
 }
 
 main reactor {
-    publisher = new InfluxLinePublisher()
-    producer = new SineWave()
-    producer.measurement -> publisher.line
+    c_publisher = new InfluxLinePublisher()
+    c_producer = new SineWave()
+    c_producer.measurement -> c_publisher.line
 }
