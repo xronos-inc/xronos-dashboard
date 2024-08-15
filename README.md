@@ -11,7 +11,7 @@ Tracing and observability of Lingua Franca applications. Xronos Dashboard is bui
 - Test publisher in Python via HTTP
 - Test publisher in C via UDP sockets
 
-## How to use
+## Running the Dashboard
 
 Start the Xronos Dashboard:
 
@@ -38,7 +38,26 @@ InfluxDB, Telegraf and Grafana services will start.
 - username: `admin`
 - password: `linguafranca`
 
-## Publishers
+## Using the Dashboard
+
+### Lag
+
+Lag is the time difference between the logical tag of events and the physical times at which they are handled. Lag captures how the physical timeline deviates logical timeline of the application. An application that is overloaded will typically exhibit growing lags. Lags in the order of seconds is unusual and likely indicates a fault.
+
+There are two phenomena that contribute to lag: reaction execution time and (for federated applications) network communication time. Lag may be reduced by:
+
+1. Adding logical delays on connections to account for execution time
+2. Using physical actions to handle external or network events
+3. Increasing `min_spacing` on actions or `period` on timers
+4. Adding deadlines to reactions to discard old events
+
+All of these make different trade-offs to handle execution time and communication latencies.
+
+### Reaction Execution
+
+Reaction Execution graphs are similar to Gantt charts. They visualize execution sequencing and time. The length of each bar represents the execution time of each reaction. The opacity of each bar represents the logical timeline of the reactor, with darker opacity corresponding with more recent logical timestamps (or microsteps).
+
+## Generic Publishers
 
 Generic Lingua Franca reactors to publish to Xronos Dashboard are located in [InfluxPublisher/](InfluxPublisher/). Each language provides an `InfluxLinePublisher` reactor, and example applications to publish to the dashboard.
 
@@ -50,7 +69,7 @@ See [InfluxPublisher/README.md](InfluxPublisher/README.md) to build and run the 
 
 ## Examples
 
-You can find additional examples in the `examples/` directory.
+You can find additional examples in the [examples](examples/) directory.
 
 ## User-Provided Dashboards
 
