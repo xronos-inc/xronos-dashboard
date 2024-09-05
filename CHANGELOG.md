@@ -1,5 +1,26 @@
 # Changelog
 
+## [e4919ec](https://github.com/xronos-inc/xronos-dashboard/tree/e4919ec329e3c8401145aa297fcd519eb6e4eafc) (2024-09-05)
+
+### Bugfixes
+
+- Fix inconsistent rendering of reactions whose start time is in the current time interval, but whose end time is after the current time interval.
+  - This change affects the following panel: "Reaction executions (red indicates deadline violation)."
+  - Before:
+    ![before](docs/images/changelog/2024-09-05/before-inconsistent-rendering.png)
+  - After:
+    ![after](docs/images/changelog/2024-09-05/after-inconsistent-rendering-and-other-fix.png)
+
+### Improvements
+
+- Report timing data at reaction granularity, not reactor granularity.
+  - It will still be clear what the containing reactor is of each reaction based on the descriptions given to the reactions. For example, "c_producer reaction 1" indicates that the containing reactor is `c_producer`.
+  - This change affects the following panels: "Maximum lag per reactor over logical time," "Reaction executions (red indicates deadline violation)," "Reaction executions (opacity indicates logical time and microstep)," and "Deadline violations per scheduled reaction execution."
+  - Before:
+    ![before](docs/images/changelog/2024-09-05/before-reactions-not-reactors.png)
+  - After:
+    ![after](docs/images/changelog/2024-09-05/after-reactions-not-reactors.png)
+
 ## [8ebc9b5](https://github.com/xronos-inc/xronos-dashboard/tree/8ebc9b504e602259b7ccfe64fc43a0a0e206c573) (2024-08-05)
 
 ### Bugfixes
