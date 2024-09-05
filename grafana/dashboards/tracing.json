@@ -368,7 +368,7 @@
       "datasource": {
         "type": "influxdb"
       },
-      "description": "The x-axis is the logical time, and the y-axis is the maximum lag (physical time minus logical time) observed in a given reactor at a logical time.",
+      "description": "The x-axis is the logical time, and the y-axis is the lag (physical time minus logical time) observed at the start of the given reaction at a logical time.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -460,7 +460,7 @@
           "refId": "A"
         }
       ],
-      "title": "Maximum lag per reactor over logical time",
+      "title": "Maximum lag of each reaction over logical time",
       "transformations": [
         {
           "id": "convertFieldType",
@@ -963,7 +963,7 @@
           "refId": "A"
         }
       ],
-      "title": "Deadline violations per scheduled reaction",
+      "title": "Deadline violations per scheduled reaction execution",
       "type": "barchart"
     }
   ],
