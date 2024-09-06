@@ -26,6 +26,10 @@
   - This change is motivated by the fact that when a reaction execution does not terminate in the current time window, the duration that is reported by the tooltip for these panels corresponds only to the portion of the time interval that overlaps with the current time window. Therefore, it is necessary to clarify that the time interval reported only corresponds to a part of a larger time interval.
   - Panel descriptions are updated to explain this and its relevance to reported interval durations.
   - This change affects the following panels: "Reaction executions (red indicates deadline violation)" and "Reaction executions (opacity indicates logical time and microstep)"
+  - Before:
+    ![before](docs/images/changelog/2024-09-06/before-color-code-partial-intervals.png)
+  - After:
+    ![after](docs/images/changelog/2024-09-06/after-color-code-partial-intervals.png)
 
 ## [dd69104](https://github.com/xronos-inc/xronos-dashboard/tree/dd6910447de99c117878820de46d12a46869b5e3) (2024-08-05)
 
