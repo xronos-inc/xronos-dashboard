@@ -777,12 +777,12 @@
                 "-1": {
                   "color": "blue",
                   "index": 1,
-                  "text": "EXECUTING_START"
+                  "text": "EXECUTING_STARTS"
                 },
                 "-2": {
                   "color": "#7a7a7a40",
                   "index": 0,
-                  "text": "IDLE_START"
+                  "text": "IDLE_STARTS"
                 }
               },
               "type": "value"
