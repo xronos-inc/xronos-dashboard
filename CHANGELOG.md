@@ -1,6 +1,6 @@
 # Changelog
 
-## [b69c1f6](https://github.com/xronos-inc/xronos-dashboard/tree/b69c1f62da8c104370f85b436eac068524b965cc) (2024-09-06)
+## [4d7dbee](https://github.com/xronos-inc/xronos-dashboard/tree/4d7dbeecb00f5b2e1cd907d116deb8ae1cb270a6) (2024-09-06)
 
 ### Bugfixes
 
@@ -24,6 +24,10 @@
 
 - Use color coding and labelling to indicate when a reaction execution, deadline handler execution, or idle period corresponds to only part of a time interval due to the end point not being in the current time window.
   - This change is motivated by the fact that when a reaction execution does not terminate in the current time window, the duration that is reported by the tooltip for these panels corresponds only to the portion of the time interval that overlaps with the current time window. Therefore, it is necessary to clarify that the time interval reported only corresponds to a part of a larger time interval.
+  - The following colors are used:
+    - Instead of being fully transparent, partial idle periods are colored gray and are partially transparent.
+    - Instead of being green, partial reaction executions are colored blue.
+    - Instead of being red, partial deadline handler executions are colored orange.
   - Panel descriptions are updated to explain this and its relevance to reported interval durations.
   - This change affects the following panels: "Reaction executions (red indicates deadline violation)" and "Reaction executions (opacity indicates logical time and microstep)"
   - Before:
