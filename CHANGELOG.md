@@ -27,7 +27,7 @@
   - Panel descriptions are updated to explain this and its relevance to reported interval durations.
   - This change affects the following panels: "Reaction executions (red indicates deadline violation)" and "Reaction executions (opacity indicates logical time and microstep)"
 
-## [8ebc9b5](https://github.com/xronos-inc/xronos-dashboard/tree/8ebc9b504e602259b7ccfe64fc43a0a0e206c573) (2024-08-05)
+## [dd69104](https://github.com/xronos-inc/xronos-dashboard/tree/dd6910447de99c117878820de46d12a46869b5e3) (2024-08-05)
 
 ### Bugfixes
 
