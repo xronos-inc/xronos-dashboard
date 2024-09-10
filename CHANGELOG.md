@@ -1,6 +1,41 @@
 # Changelog
 
-## [8ebc9b5](https://github.com/xronos-inc/xronos-dashboard/tree/8ebc9b504e602259b7ccfe64fc43a0a0e206c573) (2024-08-05)
+## [4d7dbee](https://github.com/xronos-inc/xronos-dashboard/tree/4d7dbeecb00f5b2e1cd907d116deb8ae1cb270a6) (2024-09-06)
+
+### Bugfixes
+
+- Fix inconsistent rendering of reactions whose start time is in the current time interval, but whose end time is after the current time interval.
+  - This change affects the following panel: "Reaction executions (red indicates deadline violation)."
+  - Before:
+    ![before](docs/images/changelog/2024-09-06/before-inconsistent-rendering.png)
+  - After:
+    ![after](docs/images/changelog/2024-09-06/after-inconsistent-rendering-and-other-fix.png)
+
+### Improvements
+
+- Report timing data at reaction granularity, not reactor granularity.
+
+  - It will still be clear what the containing reactor is of each reaction based on the descriptions given to the reactions. For example, "c_producer reaction 1" indicates that the containing reactor is `c_producer`.
+  - This change affects the following panels: "Maximum lag per reactor over logical time," "Reaction executions (red indicates deadline violation)," "Reaction executions (opacity indicates logical time and microstep)," and "Deadline violations per scheduled reaction execution."
+  - Before:
+    ![before](docs/images/changelog/2024-09-06/before-reactions-not-reactors.png)
+  - After:
+    ![after](docs/images/changelog/2024-09-06/after-reactions-not-reactors.png)
+
+- Use color coding and labelling to indicate when a reaction execution, deadline handler execution, or idle period corresponds to only part of a time interval due to the end point not being in the current time window.
+  - This change is motivated by the fact that when a reaction execution does not terminate in the current time window, the duration that is reported by the tooltip for these panels corresponds only to the portion of the time interval that overlaps with the current time window. Therefore, it is necessary to clarify that the time interval reported only corresponds to a part of a larger time interval.
+  - The following colors are used:
+    - Instead of being fully transparent, partial idle periods are colored gray and are partially transparent.
+    - Instead of being green, partial reaction executions are colored blue.
+    - Instead of being red, partial deadline handler executions are colored orange.
+  - Panel descriptions are updated to explain this and its relevance to reported interval durations.
+  - This change affects the following panels: "Reaction executions (red indicates deadline violation)" and "Reaction executions (opacity indicates logical time and microstep)"
+  - Before:
+    ![before](docs/images/changelog/2024-09-06/before-color-code-partial-intervals.png)
+  - After:
+    ![after](docs/images/changelog/2024-09-06/after-color-code-partial-intervals.png)
+
+## [dd69104](https://github.com/xronos-inc/xronos-dashboard/tree/dd6910447de99c117878820de46d12a46869b5e3) (2024-08-05)
 
 ### Bugfixes
 
