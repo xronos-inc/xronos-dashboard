@@ -7,9 +7,13 @@ on:
       - ci-test
 
 jobs:
-  e2e-test:
+  build:
     runs-on: ubuntu-24.04
-
+    strategy:
+      matrix:
+        platform:
+          - amd64
+          - arm64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,9 +38,13 @@ jobs:
         working-directory: InfluxPublisher/py
         run: lfc src/InfluxPublisher.lf
 
-      - name: Start Test Publisher environment
+      - name: Build docker images
         working-directory: InfluxPublisher
-        run: docker compose up -d --build
+        run: docker compose build
+
+      - name: Start docker containers
+        working-directory: InfluxPublisher
+        run: docker compose up -d
 
       - name: Run E2E Tests
         working-directory: InfluxPublisher/tests
