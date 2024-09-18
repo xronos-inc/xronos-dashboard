@@ -7,8 +7,7 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
 1. Compile the LF example applications:
 
    ```bash
-   (cd c && lfc src/InfluxPublisher.lf)
-   (cd py && lfc src/InfluxPublisher.lf)
+   bash run_build.sh
    ```
 
 1. Start Xronos Dashboard and LF example applications:
@@ -21,4 +20,4 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
 
 ## Testing
 
-There is an end to end testing file in [tests/test_publisher_e2e.sh](tests/test_publisher_e2e.sh)
+There is an end to end testing file in tests/test_publisher_e2e.sh
