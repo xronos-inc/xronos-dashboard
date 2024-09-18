@@ -7,13 +7,9 @@ on:
       - ci-test
 
 jobs:
-  build:
+  e2e-test:
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        platform:
-          - amd64
-          - arm64
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
