@@ -1,1 +1,0 @@
-rm -rf c/bin c/src-gen c/include py/bin py/src-gen py/include

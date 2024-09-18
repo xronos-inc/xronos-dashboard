@@ -34,12 +34,15 @@ jobs:
       #     docker-compose up -d --build
 
       - name: Install Lingua Franca
-        run: |
-          curl -Ls https://install.lf-lang.org | bash -s cli
+        run: curl -Ls https://install.lf-lang.org | bash -s cli
 
-      - name: Build the Test Publisher
-        run: |
-          cd InfluxPublisher; bash run_build.sh; cd ..;
+      - name: Build C Test Publisher
+        working-directory: InfluxPublisher/c
+        run: lfc src/InfluxPublisher.lf
+
+      - name: Build Python Test Publisher
+        working-directory: InfluxPublisher/py
+        run: lfc src/InfluxPublisher.lf
 
       - name: Build docker images
         working-directory: InfluxPublisher
