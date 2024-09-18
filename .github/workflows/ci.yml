@@ -24,12 +24,15 @@ jobs:
           java-version: '21'
 
       - name: Install Lingua Franca
-        run: |
-          curl -Ls https://install.lf-lang.org | bash -s cli
+        run: curl -Ls https://install.lf-lang.org | bash -s cli
 
-      - name: Build the Test Publisher
-        working-directory: InfluxPublisher
-        run: bash run_build.sh
+      - name: Build C Test Publisher
+        working-directory: InfluxPublisher/c
+        run: lfc src/InfluxPublisher.lf
+
+      - name: Build Python Test Publisher
+        working-directory: InfluxPublisher/py
+        run: lfc src/InfluxPublisher.lf
 
       - name: Start Test Publisher environment
         working-directory: InfluxPublisher
