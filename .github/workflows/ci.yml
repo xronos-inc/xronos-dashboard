@@ -41,8 +41,8 @@ jobs:
         run: bash run_build.sh
 
       - name: Start Test Publisher environment
-        working-directory: InfluxPublisher
-        run: docker compose up -d --build
+        run: |
+          (cd InfluxPublisher && docker compose up -d --build)
 
       - name: Run E2E Tests
         working-directory: InfluxPublisher/tests
