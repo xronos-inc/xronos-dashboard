@@ -29,11 +29,11 @@ jobs:
 
       - name: Build the Test Publisher
         run: |
-          cd InfluxPublisher; bash run_build.sh; cd ..;
+          (cd InfluxPublisher && bash run_build.sh)
 
       - name: Start Test Publisher environment
         run: |
-          cd InfluxPublisher; docker compose up -d --build; cd ..
+          (cd InfluxPublisher && docker compose up -d --build)
 
       - name: Install jq
         run: |
@@ -41,7 +41,7 @@ jobs:
 
       - name: Run E2E Tests
         run: |
-          cd InfluxPublisher; cd tests; bash test_publisher_e2e.sh; cd ../..
+          (cd InfluxPublisher/tests && bash test_publisher_e2e.sh)
 
       - name: Tear down Docker containers
         run: |
