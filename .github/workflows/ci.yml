@@ -36,25 +36,17 @@ jobs:
       - name: Install Lingua Franca
         run: curl -Ls https://install.lf-lang.org | bash -s cli
 
-      - name: Build C Test Publisher
-        working-directory: InfluxPublisher/c
-        run: lfc src/InfluxPublisher.lf
-
-      - name: Build Python Test Publisher
-        working-directory: InfluxPublisher/py
-        run: lfc src/InfluxPublisher.lf
-
-      - name: Build docker images
+      - name: Build the Test Publisher
         working-directory: InfluxPublisher
-        run: docker compose build
+        run: bash run_build.sh
 
-      - name: Start docker containers
+      - name: Start Test Publisher environment
         working-directory: InfluxPublisher
-        run: docker compose up -d
+        run: docker compose up -d --build
 
       - name: Run E2E Tests
-        run: |
-          cd InfluxPublisher; cd tests; bash test_publisher_e2e.sh; cd ../..
+        working-directory: InfluxPublisher/tests
+        run: bash test_publisher_e2e.sh
 
       - name: Tear down Docker containers
         run: |
