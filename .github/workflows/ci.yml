@@ -28,16 +28,16 @@ jobs:
           curl -Ls https://install.lf-lang.org | bash -s cli
 
       - name: Build the Test Publisher
-        run: |
-          (cd InfluxPublisher && bash run_build.sh)
+        working-directory: InfluxPublisher
+        run: bash run_build.sh
 
       - name: Start Test Publisher environment
-        run: |
-          (cd InfluxPublisher && docker compose up -d --build)
+        working-directory: InfluxPublisher
+        run: docker compose up -d --build
 
       - name: Run E2E Tests
-        run: |
-          (cd InfluxPublisher/tests && bash test_publisher_e2e.sh)
+        working-directory: InfluxPublisher/tests
+        run: bash test_publisher_e2e.sh
 
       - name: Tear down Docker containers
         run: |
