@@ -1,12 +1,13 @@
 # SPDX-FileCopyrightText: © 2024 Xronos Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
-name: xronos-dashboard
+# name: xronos-dashboard
+
 
 services:
   influxdb:
     image: influxdb:latest
-    pull_policy: missing
+    pull_policy: if_not_present
     container_name: influxdb
     hostname: influxdb
     networks:
@@ -28,7 +29,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    pull_policy: missing
+    pull_policy: if_not_present
     container_name: grafana
     hostname: grafana
     networks:
@@ -62,7 +63,7 @@ services:
 
   telegraf:
     image: telegraf:latest
-    pull_policy: missing
+    pull_policy: if_not_present
     container_name: telegraf
     hostname: telegraf
     networks:
@@ -83,7 +84,7 @@ services:
       restart_policy:
         condition: always
     healthcheck:
-      test: ["CMD-SHELL", "curl -i -XPOST http://0.0.0.0:8186/telegraf --data-binary \"telegraf,heartbeat=healthcheck ping=true $(date +%s%N)\""]
+      test: ["CMD-SHELL", "curl -i -X POST http://0.0.0.0:8186/telegraf --data-binary \"telegraf,heartbeat=healthcheck ping=true $(date +%s%N)\""]
       interval: 10s
       timeout: 5s
       retries: 5

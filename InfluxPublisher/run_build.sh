@@ -1,0 +1,1 @@
+cd c && lfc src/InfluxPublisher.lf; cd ..; cd py && lfc src/InfluxPublisher.lf; cd ..;
