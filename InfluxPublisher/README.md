@@ -7,8 +7,7 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
 1. Compile the LF example applications:
 
    ```bash
-   (cd c && lfc src/InfluxPublisher.lf);
-   (cd py && lfc src/InfluxPublisher.lf);
+   bash run_build.sh
    ```
 
 1. Start Xronos Dashboard and LF example applications:
@@ -18,3 +17,7 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
    ```
 
    Open Grafana on `http://localhost:3000`. Open the dashboard "Telegraf Test Publishers" to view the application-level trace data, or open the dashboard "LF Tracing" to view the trace data that is produced by the LF runtime.
+
+## Testing
+
+There is an end to end testing file in tests/test_publisher_e2e.sh

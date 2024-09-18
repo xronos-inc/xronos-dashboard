@@ -1,11 +1,13 @@
-name: xronos-dashboard
+# name: xronos-dashboard
 
 include:
  - ../docker-compose.yml
 
+#
+
 services:
   test-publisher-py:
-    pull_policy: missing
+    pull_policy: if_not_present
     build:
       context: ./py/src-gen/InfluxPublisher/
     container_name: test-publisher-py
@@ -24,7 +26,7 @@ services:
      - "host.docker.internal:host-gateway"
 
   test-publisher-c:
-    pull_policy: missing
+    pull_policy: if_not_present
     build:
       context: ./c/src-gen/InfluxPublisher/
     container_name: test-publisher-c
