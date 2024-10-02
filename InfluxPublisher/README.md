@@ -20,4 +20,4 @@ This folder contains Lingua Franca reactors that publish to InfluxDB via a socke
 
 ## Testing
 
-There is an end to end testing file in tests/test_publisher_e2e.sh
+There is an end-to-end testing file in `tests/test_publisher_e2e.sh`.
