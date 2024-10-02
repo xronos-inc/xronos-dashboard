@@ -1,4 +1,4 @@
-
+set -euo pipefail
 # load the influx db variables
 source ../../influxdb/influx.env
 # 
