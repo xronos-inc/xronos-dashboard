@@ -1,9 +1,8 @@
-# name: xronos-dashboard
+# SPDX-FileCopyrightText: © 2024 Xronos Inc.
+# SPDX-License-Identifier: BSD-3-Clause
 
 include:
  - ../docker-compose.yml
-
-#
 
 services:
   test-publisher-py:

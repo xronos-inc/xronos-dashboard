@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: © 2024 Xronos Inc.
 # SPDX-License-Identifier: BSD-3-Clause
 
-# name: xronos-dashboard
-
-
 services:
   influxdb:
     image: influxdb:latest
