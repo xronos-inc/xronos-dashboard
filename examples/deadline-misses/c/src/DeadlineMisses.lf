@@ -1,8 +1,8 @@
-// SPDX-FileCopyrightText: © 2024 Xronos Inc.
+// SPDX-FileCopyrightText: (c) 2024 Xronos Inc.
 // SPDX-License-Identifier: BSD-3-Clause
 target C {
   docker: {
-    builder-base: "xronosinc/lf-trace-plugin-api:c",
+    builder-base: "xronosinc/lf-trace-plugin-api:latest-c",
     no-build: true
   },
   tracing: true,
